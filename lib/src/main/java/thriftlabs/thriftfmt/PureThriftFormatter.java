@@ -1,15 +1,12 @@
 package thriftlabs.thriftfmt;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import thriftlabs.thriftparser.ThriftParser;
-import thriftlabs.thriftparser.ThriftParser.FieldContext;
 
 public class PureThriftFormatter {
 
@@ -43,149 +40,6 @@ public class PureThriftFormatter {
 
     public String getOut() {
         return out;
-    }
-
-    protected static class Utils {
-        private static final int FAKE_NODE_LINE_NO = -1;
-
-        public static boolean isToken(ParseTree node, String text) {
-            return node instanceof TerminalNode && ((TerminalNode) node).getSymbol().getText().equals(text);
-        }
-
-        public static boolean isEOF(ParseTree node) {
-            return node instanceof TerminalNode && ((TerminalNode) node).getSymbol().getType() == ThriftParser.EOF;
-        }
-
-        public static boolean isFakeNode(TerminalNode node) {
-            return node.getSymbol().getLine() == FAKE_NODE_LINE_NO;
-        }
-
-        public static boolean notSameClass(ParseTree a, ParseTree b) {
-            return !a.getClass().equals(b.getClass());
-        }
-
-        public static boolean isNeedNewLineNode(ParseTree node) {
-            return node instanceof ThriftParser.Enum_fieldContext ||
-                    node instanceof ThriftParser.Struct_Context ||
-                    node instanceof ThriftParser.Union_Context ||
-                    node instanceof ThriftParser.Exception_Context ||
-                    node instanceof ThriftParser.ServiceContext;
-        }
-
-        public static ParseTree[] splitFieldByAssign(ThriftParser.FieldContext node) {
-            /*
-             * 将字段的子节点分割为 [左, 右]
-             * 字段: '1: required i32 number_a = 0,'
-             * 左: '1: required i32 number_a'
-             * 右: '= 0,'
-             */
-            ParserRuleContext left;
-            ParserRuleContext right;
-
-            if (node instanceof ThriftParser.FieldContext) {
-                left = new ThriftParser.FieldContext(node.getParent(), 0);
-                right = new ThriftParser.FieldContext(node.getParent(), 0);
-            } else {
-                left = new ThriftParser.Enum_fieldContext(node.getParent(), 0);
-                right = new ThriftParser.Enum_fieldContext(node.getParent(), 0);
-            }
-
-            ParseTree[][] splitChildren = Utils.splitFieldChildrenByAssign(node);
-            ParseTree[] leftChildren = splitChildren[0];
-            ParseTree[] rightChildren = splitChildren[1];
-
-            for (ParseTree child : leftChildren) {
-                left.addAnyChild(child); // 假设 addAnyChild 方法已定义
-            }
-            for (ParseTree child : rightChildren) {
-                right.addAnyChild(child); // 假设 addAnyChild 方法已定义
-            }
-
-            return new ParseTree[] { left, right };
-        }
-
-        public static ParseTree[][] splitFieldChildrenByAssign(FieldContext node) {
-            List<ParseTree> children = new ArrayList<>();
-            for (int i = 0; i < node.getChildCount(); i++) {
-                children.add(node.getChild(i));
-            }
-
-            int i = 0;
-            boolean curLeft = true;
-
-            for (; i < node.getChildCount(); i++) {
-                ParseTree child = node.getChild(i);
-                if (isToken(child, "=") || child instanceof ThriftParser.List_separatorContext) {
-                    curLeft = false;
-                    break;
-                }
-            }
-
-            // 当前子节点属于左侧
-            if (curLeft) {
-                i++;
-            }
-
-            List<ParseTree> left = children.subList(0, i);
-            List<ParseTree> right = children.subList(i, children.size());
-
-            return new ParseTree[][] { left.toArray(new ParseTree[0]), right.toArray(new ParseTree[0]) };
-        }
-
-        // 获取字段的左右分割大小
-        public static int[] getSplitFieldsLeftRightSize(ParseTree[] fields) {
-            int leftMaxSize = 0;
-            int rightMaxSize = 0;
-
-            for (ParseTree field : fields) {
-                FieldContext node = (FieldContext) field; // 假设 FieldContext 是已定义的
-                ParseTree[] split = Utils.splitFieldByAssign(node); // 需要实现 splitFieldByAssign 方法
-                ParseTree left = split[0];
-                ParseTree right = split[1];
-
-                int leftSize = new PureThriftFormatter().formatNode(left).length();
-                int rightSize = new PureThriftFormatter().formatNode(right).length();
-
-                leftMaxSize = Math.max(leftMaxSize, leftSize);
-                rightMaxSize = Math.max(rightMaxSize, rightSize);
-            }
-
-            return new int[] { leftMaxSize, rightMaxSize };
-        }
-
-        // 获取节点的所有子节点
-        public static List<ParseTree> getNodeChildren(ParseTree node) {
-            int childCount = node.getChildCount();
-            ParseTree[] children = new ParseTree[childCount];
-
-            for (int i = 0; i < childCount; i++) {
-                children[i] = node.getChild(i);
-            }
-
-            return List.of(children);
-        }
-
-        public static NodeProcessFunc genInlineContext(String join, BiPredicate<Integer, ParseTree> tightFn) {
-            return new NodeProcessFunc() {
-                @Override
-                public void process(PureThriftFormatter formatter, ParseTree node) {
-                    for (int i = 0; i < node.getChildCount(); i++) {
-                        ParseTree child = node.getChild(i);
-                        if (i > 0 && !join.isEmpty()) {
-                            if (tightFn == null || !tightFn.test(i, child)) {
-                                formatter.append(join);
-                            }
-                        }
-                        formatter.processNode(child);
-                    }
-                }
-            };
-        }
-
-        // 定义 NodeProcessFunc 接口
-        public interface NodeProcessFunc {
-            void process(PureThriftFormatter formatter, ParseTree node);
-        }
     }
 
     public String formatNode(ParseTree node) {
@@ -261,7 +115,7 @@ public class PureThriftFormatter {
             }
             beforeBlockNode(node);
             if (index > 0 && lastNode != null) {
-                if (!lastNode.getClass().equals(node.getClass()) || Utils.isNeedNewLineNode(node)) {
+                if (!lastNode.getClass().equals(node.getClass()) || FormatterUtil.isNeedNewLineNode(node)) {
                     newline(2);
                 } else {
                     newline();
@@ -374,7 +228,7 @@ public class PureThriftFormatter {
     }
 
     private void TerminalNode(TerminalNode node) {
-        if (Utils.isEOF(node)) {
+        if (FormatterUtil.isEOF(node)) {
             return;
         }
 
@@ -384,7 +238,7 @@ public class PureThriftFormatter {
     }
 
     protected void DocumentContext(ThriftParser.DocumentContext node) {
-        this.processBlockNodes(Utils.getNodeChildren(node), "");
+        this.processBlockNodes(FormatterUtil.getNodeChildren(node), "");
     }
 
     protected void HeaderContext(ThriftParser.HeaderContext node) {
@@ -396,75 +250,75 @@ public class PureThriftFormatter {
     }
 
     private void Include_Context(ThriftParser.Include_Context node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Namespace_Context(ThriftParser.Namespace_Context node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Typedef_Context(ThriftParser.Typedef_Context node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Base_typeContext(ThriftParser.Base_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Real_base_typeContext(ThriftParser.Real_base_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Const_ruleContext(ThriftParser.Const_ruleContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Const_valueContext(ThriftParser.Const_valueContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void IntegerContext(ThriftParser.IntegerContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Container_typeContext(ThriftParser.Container_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Set_typeContext(ThriftParser.Set_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void List_typeContext(ThriftParser.List_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Cpp_typeContext(ThriftParser.Cpp_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Const_mapContext(ThriftParser.Const_mapContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Const_map_entryContext(ThriftParser.Const_map_entryContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void List_separatorContext(ThriftParser.List_separatorContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Field_idContext(ThriftParser.Field_idContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Field_reqContext(ThriftParser.Field_reqContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Field_typeContext(ThriftParser.Field_typeContext node) {
-        Utils.genInlineContext("", null).process(this, node);
+        FormatterUtil.defaultInline.process(this, node);
     }
 
     protected void Map_typeContext(ThriftParser.Map_typeContext node) {
@@ -473,57 +327,76 @@ public class PureThriftFormatter {
             if (child.getParent() == null) {
                 return false;
             }
-            if (!Utils.isToken(child.getParent().getChild(index - 1), ",")) {
+            if (!FormatterUtil.isToken(child.getParent().getChild(index - 1), ",")) {
                 return true;
             }
             return false;
         };
-        Utils.genInlineContext(" ", tightFn).process(this, node);
+        FormatterUtil.genInlineContext(" ", tightFn).process(this, node);
     }
 
     protected void Const_listContext(ThriftParser.Const_listContext node) {
+        FormatterUtil.listSeparatorInline.process(this, node);
     }
 
     protected void Enum_ruleContext(ThriftParser.Enum_ruleContext node) {
+        FormatterUtil.genSubblocksContext(3, ThriftParser.Enum_fieldContext.class).process(this, node);
     }
 
     protected void Struct_Context(ThriftParser.Struct_Context node) {
+        FormatterUtil.fieldSubblocks.process(this, node);
     }
 
     protected void Union_Context(ThriftParser.Union_Context node) {
+        FormatterUtil.fieldSubblocks.process(this, node);
     }
 
     protected void Exception_Context(ThriftParser.Exception_Context node) {
+        FormatterUtil.fieldSubblocks.process(this, node);
     }
 
     protected void Enum_fieldContext(ThriftParser.Enum_fieldContext node) {
+        FormatterUtil.listSeparatorInline.process(this, node);
     }
 
     protected void FieldContext(ThriftParser.FieldContext node) {
+        FormatterUtil.listSeparatorInline.process(this, node);
     }
 
     protected void Function_Context(ThriftParser.Function_Context node) {
+        FormatterUtil.tupleTightInline.process(this, node);
     }
 
     protected void OnewayContext(ThriftParser.OnewayContext node) {
+        FormatterUtil.genInlineContext(" ", null).process(this, node);
     }
 
     protected void Function_typeContext(ThriftParser.Function_typeContext node) {
+        FormatterUtil.genInlineContext(" ", null).process(this, node);
     }
 
     protected void Throws_listContext(ThriftParser.Throws_listContext node) {
+        FormatterUtil.tupleTightInline.process(this, node);
     }
 
     protected void Type_annotationsContext(ThriftParser.Type_annotationsContext node) {
+        FormatterUtil.tupleTightInline.process(this, node);
     }
 
     protected void Type_annotationContext(ThriftParser.Type_annotationContext node) {
+        FormatterUtil.tupleTightInline.process(this, node);
     }
 
     protected void Annotation_valueContext(ThriftParser.Annotation_valueContext node) {
+        FormatterUtil.genInlineContext(" ", null).process(this, node);
     }
 
     protected void ServiceContext(ThriftParser.ServiceContext node) {
+        if (FormatterUtil.isToken(node.getChild(2), "extends")) {
+            FormatterUtil.genSubblocksContext(5, ThriftParser.Function_Context.class).process(this, node);
+        } else {
+            FormatterUtil.genSubblocksContext(3, ThriftParser.Function_Context.class).process(this, node);
+        }
     }
 
     protected void SenumContext(ThriftParser.SenumContext node) {
