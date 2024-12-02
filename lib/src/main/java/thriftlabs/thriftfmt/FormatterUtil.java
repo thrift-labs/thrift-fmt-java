@@ -1,8 +1,11 @@
 package thriftlabs.thriftfmt;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -12,7 +15,7 @@ import thriftlabs.thriftparser.ThriftParser;
 import thriftlabs.thriftparser.ThriftParser.FieldContext;
 
 public final class FormatterUtil {
-    private static final int FAKE_NODE_LINE_NO = -1;
+    public static final int FAKE_NODE_LINE_NO = -1;
 
     public static boolean isToken(ParseTree node, String text) {
         return node instanceof TerminalNode && ((TerminalNode) node).getSymbol().getText().equals(text);
@@ -216,5 +219,29 @@ public final class FormatterUtil {
         ParseTree[] subArray = new ParseTree[nodes.length - startIndex];
         System.arraycopy(nodes, startIndex, subArray, 0, nodes.length - startIndex);
         return subArray;
+    }
+
+    // 遍历节点
+    public static void walkNode(ParseTree root, Consumer<ParseTree> callback) {
+        LinkedList<ParseTree> stack = new LinkedList<>();
+        stack.add(root);
+
+        while (!stack.isEmpty()) {
+            ParseTree node = stack.removeFirst(); // 移除并获取第一个元素
+            if (node == null) {
+                break;
+            }
+
+            callback.accept(root); // 调用回调函数
+            List<ParseTree> children = getNodeChildren(node); // 获取子节点
+            for (ParseTree child : children) {
+                stack.add(child); // 添加子节点到栈中
+            }
+        }
+    }
+
+    public static boolean isFunctionOrThrowsListNode(ParseTree node) {
+        return node instanceof ThriftParser.Function_Context ||
+                node instanceof ThriftParser.Throws_listContext;
     }
 }
