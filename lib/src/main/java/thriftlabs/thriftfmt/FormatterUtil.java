@@ -173,6 +173,8 @@ public final class FormatterUtil {
 
     public static final NodeProcessFunc defaultInline = genInlineContext(" ", null);
 
+    public static final NodeProcessFunc tightInline = genInlineContext("", null);
+
     public static final NodeProcessFunc listSeparatorInline = genInlineContext(
             " ",
             (index, node) -> node instanceof ThriftParser.List_separatorContext);

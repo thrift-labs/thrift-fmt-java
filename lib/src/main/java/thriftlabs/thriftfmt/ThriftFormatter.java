@@ -1,6 +1,6 @@
 package thriftlabs.thriftfmt;
 
-public class ThriftFormatter {
+public class ThriftFormatter extends PureThriftFormatter {
     public ThriftFormatter() {
     }
 }

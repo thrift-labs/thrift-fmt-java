@@ -282,15 +282,15 @@ public class PureThriftFormatter {
     }
 
     protected void Container_typeContext(ThriftParser.Container_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        FormatterUtil.tightInline.process(this, node);
     }
 
     protected void Set_typeContext(ThriftParser.Set_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        FormatterUtil.tightInline.process(this, node);
     }
 
     protected void List_typeContext(ThriftParser.List_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        FormatterUtil.tightInline.process(this, node);
     }
 
     protected void Cpp_typeContext(ThriftParser.Cpp_typeContext node) {
@@ -310,7 +310,7 @@ public class PureThriftFormatter {
     }
 
     protected void Field_idContext(ThriftParser.Field_idContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        FormatterUtil.tightInline.process(this, node);
     }
 
     protected void Field_reqContext(ThriftParser.Field_reqContext node) {
