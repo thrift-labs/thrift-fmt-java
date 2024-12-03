@@ -29,7 +29,7 @@ public class PureThriftFormatterTest {
     }
 
     @SuppressWarnings("resource")
-    private String readResourceFile(String fileName) {
+    public String readResourceFile(String fileName) {
         ClassLoader classLoader = getClass().getClassLoader();
         try (InputStream inputStream = classLoader.getResourceAsStream(fileName)) {
             if (inputStream == null) {
@@ -53,7 +53,7 @@ public class PureThriftFormatterTest {
         }
     }
 
-    private List<String> findThriftFiles(String directory) throws IOException {
+    public List<String> findThriftFiles(String directory) throws IOException {
         Path dirPath = Paths.get(directory);
         return Files.walk(dirPath)
                 .filter(path -> path.toString().endsWith(".thrift"))

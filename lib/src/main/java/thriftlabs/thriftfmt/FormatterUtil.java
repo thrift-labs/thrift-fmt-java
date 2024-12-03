@@ -1,13 +1,17 @@
 package thriftlabs.thriftfmt;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -102,7 +106,7 @@ public final class FormatterUtil {
     }
 
     // 获取字段的左右分割大小
-    public static int[] getSplitFieldsLeftRightSize(ParseTree[] fields) {
+    public static int[] getSplitFieldsLeftRightSize(List<ParseTree> fields) {
         int leftMaxSize = 0;
         int rightMaxSize = 0;
 
@@ -243,5 +247,125 @@ public final class FormatterUtil {
     public static boolean isFunctionOrThrowsListNode(ParseTree node) {
         return node instanceof ThriftParser.Function_Context ||
                 node instanceof ThriftParser.Throws_listContext;
+    }
+
+    public static Pair<Map<String, Integer>, Integer> calcFieldAlignByFieldPaddingMap(List<ParseTree> fields) {
+        Map<String, Integer> paddingMap = new HashMap<>();
+        if (fields.isEmpty() || !isFieldOrEnumField(fields.get(0))) {
+            return new Pair<>(paddingMap, 0);
+        }
+
+        Map<String, Integer> nameLevels = new HashMap<>();
+        for (ParseTree field : fields) {
+            for (int i = 0; i < field.getChildCount() - 1; i++) {
+                String nameA = getFieldChildName(field.getChild(i));
+                String nameB = getFieldChildName(field.getChild(i + 1));
+
+                nameLevels.putIfAbsent(nameA, 0);
+                nameLevels.putIfAbsent(nameB, 0);
+
+                int levelB = Math.max(nameLevels.get(nameB), nameLevels.get(nameA) + 1);
+                nameLevels.put(nameB, levelB);
+            }
+        }
+
+        // Check if levels are continuous
+        if (Collections.max(nameLevels.values()) != (nameLevels.size() - 1)) {
+            return new Pair<>(paddingMap, 0);
+        }
+
+        Map<Integer, Integer> levelLength = new HashMap<>();
+        for (ParseTree field : fields) {
+            for (int i = 0; i < field.getChildCount(); i++) {
+                ParseTree child = field.getChild(i);
+                int level = nameLevels.get(getFieldChildName(child));
+                int length = new PureThriftFormatter().formatNode(child).length();
+
+                levelLength.put(level, Math.max(levelLength.getOrDefault(level, 0), length));
+            }
+        }
+
+        ThriftParser.List_separatorContext sep = new ThriftParser.List_separatorContext(null, 0);
+        Map<Integer, Integer> levelPadding = new HashMap<>();
+        for (Map.Entry<Integer, Integer> entry : levelLength.entrySet()) {
+            int level = entry.getKey();
+            int padding = level;
+            if (level == nameLevels.get(getFieldChildName(sep))) {
+                padding -= 1;
+            }
+
+            for (int i = 0; i < level; i++) {
+                padding += levelLength.getOrDefault(i, 0);
+            }
+
+            levelPadding.put(level, padding);
+        }
+
+        for (Map.Entry<String, Integer> entry : nameLevels.entrySet()) {
+            String name = entry.getKey();
+            int level = entry.getValue();
+            paddingMap.put(name, levelPadding.get(level));
+        }
+
+        int commentPadding = levelLength.size();
+        for (int length : levelLength.values()) {
+            commentPadding += length;
+        }
+        if (paddingMap.containsKey(getFieldChildName(sep))) {
+            commentPadding -= 1;
+        }
+
+        return new Pair<>(paddingMap, commentPadding);
+    }
+
+    public static int[] calcFieldAlignByAssignPadding(List<ParseTree> fields) {
+        if (fields.isEmpty() || !isFieldOrEnumField(fields.get(0))) {
+            return new int[] { 0, 0 };
+        }
+
+        int[] sizes = getSplitFieldsLeftRightSize(fields);
+        int leftMaxSize = sizes[0];
+        int rightMaxSize = sizes[1];
+
+        // Add extra space "xxx = yyy" -> "xxx" + " " + "= yyy"
+        int assignPadding = leftMaxSize + 1;
+        int commentPadding = assignPadding + rightMaxSize + 1; // add an extra space for next comment
+
+        /*
+         * If it is not list separator, need to add extra space
+         * Case 1 --> "1: bool a = true," ---> "1: bool a" + " " + "= true,"
+         * Case 2 --> "2: bool b," ---> "2: bool b" + "" + ","
+         */
+        if (rightMaxSize <= 1) { // Case 1
+            commentPadding = commentPadding - 1;
+        }
+
+        return new int[] { assignPadding, commentPadding };
+    }
+
+    // Assume these methods are defined elsewhere
+    public static boolean isFieldOrEnumField(ParseTree field) {
+        // Implementation...
+        return false;
+    }
+
+    public static String getFieldChildName(ParseTree n) {
+        if (isToken(n, "=")) {
+            return "=";
+        }
+        return n.getClass().getSimpleName();
+    }
+
+    public static int calcSubBlocksCommentPadding(List<ParseTree> subblocks) {
+        int padding = 0;
+        for (ParseTree subblock : subblocks) {
+            int nodeLength = new PureThriftFormatter().formatNode(subblock).length();
+            padding = Math.max(padding, nodeLength);
+        }
+
+        if (padding > 0) {
+            padding += 1;
+        }
+        return padding;
     }
 }

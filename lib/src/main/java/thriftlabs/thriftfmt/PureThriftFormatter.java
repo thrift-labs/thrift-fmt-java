@@ -30,9 +30,9 @@ public class PureThriftFormatter {
     }
 
     protected Option option = new Option(4, true, true, true, false, false);
-    private String out;
-    private int newlineCounter;
-    private String currentIndent;
+    protected String out;
+    protected int newlineCounter;
+    protected String currentIndent;
 
     public void option(Option opt) {
         this.option = opt;
@@ -227,7 +227,7 @@ public class PureThriftFormatter {
         // unsupport types
     }
 
-    private void TerminalNode(TerminalNode node) {
+    protected void TerminalNode(TerminalNode node) {
         if (FormatterUtil.isEOF(node)) {
             return;
         }
