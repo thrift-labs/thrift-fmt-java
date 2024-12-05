@@ -1,8 +1,8 @@
 package thriftlabs.thriftfmt;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,8 +13,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
-
-import org.junit.Test;
 
 import thriftlabs.thriftparser.Thrift;
 

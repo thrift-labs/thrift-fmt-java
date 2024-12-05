@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Pair;
@@ -16,7 +15,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import thriftlabs.thriftparser.ThriftParser;
-import thriftlabs.thriftparser.ThriftParser.FieldContext;
 
 public final class FormatterUtil {
     public static final int FAKE_NODE_LINE_NO = -1;
