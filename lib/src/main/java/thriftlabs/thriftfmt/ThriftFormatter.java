@@ -236,9 +236,11 @@ public class ThriftFormatter extends PureThriftFormatter {
             return "";
         }
 
-        String[] parts = this.out.split("\n");
-        String cur = parts[parts.length - 1];
-        return cur;
+        int lastNewLineIndex = this.out.lastIndexOf("\n");
+        if (lastNewLineIndex == -1) {
+            return this.out;
+        }
+        return this.out.substring(lastNewLineIndex + 1);
     }
 
     private void addTailComment() {

@@ -111,6 +111,9 @@ public final class FormatterUtil {
 
         for (ParseTree field : fields) {
             Pair<ParseTree, ParseTree> split = splitFieldByAssign(field); // 需要实现 splitFieldByAssign 方法
+            if (split == null) {
+                break;
+            }
             int leftSize = new PureThriftFormatter().formatNode(split.a).length();
             int rightSize = new PureThriftFormatter().formatNode(split.b).length();
 
