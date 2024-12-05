@@ -45,39 +45,41 @@ public final class FormatterUtil {
                 node instanceof ThriftParser.ServiceContext;
     }
 
-    public static ParseTree[] splitFieldByAssign(ThriftParser.FieldContext node) {
+    public static Pair<ParseTree, ParseTree> splitFieldByAssign(ParseTree node) {
         /*
-         * 将字段的子节点分割为 [左, 右]
+         * 将字段的子节点以等号分割为 [左, 右]
          * 字段: '1: required i32 number_a = 0,'
          * 左: '1: required i32 number_a'
          * 右: '= 0,'
          */
         ParserRuleContext left;
         ParserRuleContext right;
+        Pair<List<ParseTree>, List<ParseTree>> splitChildren;
 
         if (node instanceof ThriftParser.FieldContext) {
-            left = new ThriftParser.FieldContext(node.getParent(), 0);
-            right = new ThriftParser.FieldContext(node.getParent(), 0);
+            ThriftParser.FieldContext field = (ThriftParser.FieldContext) node;
+            left = new ThriftParser.FieldContext(field.getParent(), 0);
+            right = new ThriftParser.FieldContext(field.getParent(), 0);
+            splitChildren = splitFieldChildrenByAssign(field);
+        } else if (node instanceof ThriftParser.Enum_fieldContext) {
+            ThriftParser.Enum_fieldContext field = (ThriftParser.Enum_fieldContext) node;
+            left = new ThriftParser.Enum_fieldContext(field.getParent(), 0);
+            right = new ThriftParser.Enum_fieldContext(field.getParent(), 0);
+            splitChildren = splitFieldChildrenByAssign(field);
         } else {
-            left = new ThriftParser.Enum_fieldContext(node.getParent(), 0);
-            right = new ThriftParser.Enum_fieldContext(node.getParent(), 0);
+            return null;
         }
 
-        ParseTree[][] splitChildren = splitFieldChildrenByAssign(node);
-        ParseTree[] leftChildren = splitChildren[0];
-        ParseTree[] rightChildren = splitChildren[1];
-
-        for (ParseTree child : leftChildren) {
+        for (ParseTree child : splitChildren.a) {
             left.addAnyChild(child); // 假设 addAnyChild 方法已定义
         }
-        for (ParseTree child : rightChildren) {
+        for (ParseTree child : splitChildren.b) {
             right.addAnyChild(child); // 假设 addAnyChild 方法已定义
         }
-
-        return new ParseTree[] { left, right };
+        return new Pair<ParseTree, ParseTree>(left, right);
     }
 
-    public static ParseTree[][] splitFieldChildrenByAssign(FieldContext node) {
+    public static Pair<List<ParseTree>, List<ParseTree>> splitFieldChildrenByAssign(ParserRuleContext node) {
         List<ParseTree> children = new ArrayList<>();
         for (int i = 0; i < node.getChildCount(); i++) {
             children.add(node.getChild(i));
@@ -101,41 +103,34 @@ public final class FormatterUtil {
 
         List<ParseTree> left = children.subList(0, i);
         List<ParseTree> right = children.subList(i, children.size());
-
-        return new ParseTree[][] { left.toArray(new ParseTree[0]), right.toArray(new ParseTree[0]) };
+        return new Pair<List<ParseTree>, List<ParseTree>>(left, right);
     }
 
     // 获取字段的左右分割大小
-    public static int[] getSplitFieldsLeftRightSize(List<ParseTree> fields) {
+    public static Pair<Integer, Integer> getSplitFieldsLeftRightSize(List<ParseTree> fields) {
         int leftMaxSize = 0;
         int rightMaxSize = 0;
 
         for (ParseTree field : fields) {
-            FieldContext node = (FieldContext) field; // 假设 FieldContext 是已定义的
-            ParseTree[] split = splitFieldByAssign(node); // 需要实现 splitFieldByAssign 方法
-            ParseTree left = split[0];
-            ParseTree right = split[1];
-
-            int leftSize = new PureThriftFormatter().formatNode(left).length();
-            int rightSize = new PureThriftFormatter().formatNode(right).length();
+            Pair<ParseTree, ParseTree> split = splitFieldByAssign(field); // 需要实现 splitFieldByAssign 方法
+            int leftSize = new PureThriftFormatter().formatNode(split.a).length();
+            int rightSize = new PureThriftFormatter().formatNode(split.b).length();
 
             leftMaxSize = Math.max(leftMaxSize, leftSize);
             rightMaxSize = Math.max(rightMaxSize, rightSize);
         }
-
-        return new int[] { leftMaxSize, rightMaxSize };
+        return new Pair<>(leftMaxSize, rightMaxSize);
     }
 
     // 获取节点的所有子节点
     public static List<ParseTree> getNodeChildren(ParseTree node) {
         int childCount = node.getChildCount();
-        ParseTree[] children = new ParseTree[childCount];
+        List<ParseTree> children = new ArrayList<>(childCount);
 
         for (int i = 0; i < childCount; i++) {
-            children[i] = node.getChild(i);
+            children.add(node.getChild(i));
         }
-
-        return List.of(children);
+        return children;
     }
 
     public static NodeProcessFunc genInlineContext(String join, BiPredicate<Integer, ParseTree> tightFn) {
@@ -164,16 +159,16 @@ public final class FormatterUtil {
                 formatter.newline();
 
                 List<ParseTree> leftChildren = children.subList(start, children.size());
-                ParseTree[][] result = splitRepeatNodes(leftChildren.toArray(new ParseTree[0]), kindClass);
-                ParseTree[] subblocks = result[0]; // 符合条件的子块
-                ParseTree[] leftNodes = result[1]; // 剩余的节点
+                Pair<List<ParseTree>, List<ParseTree>> result = splitRepeatNodes(leftChildren, kindClass);
+                List<ParseTree> subblocks = result.a; // 符合条件的子块
+                List<ParseTree> leftNodes = result.b; // 剩余的节点
 
-                formatter.beforeSubblocks(List.of(subblocks));
-                formatter.processBlockNodes(List.of(subblocks), " ".repeat(formatter.option.indent));
-                formatter.afterSubblocks(List.of(subblocks));
+                formatter.beforeSubblocks(subblocks);
+                formatter.processBlockNodes(subblocks, " ".repeat(formatter.option.indent));
+                formatter.afterSubblocks(subblocks);
 
                 formatter.newline();
-                formatter.processInlineNodes(List.of(leftNodes), " ");
+                formatter.processInlineNodes(leftNodes, " ");
             }
         };
     }
@@ -202,27 +197,23 @@ public final class FormatterUtil {
         void process(PureThriftFormatter formatter, ParseTree node);
     }
 
-    public static ParseTree[][] splitRepeatNodes(ParseTree[] nodes, Class<?> targetClass) {
+    public static Pair<List<ParseTree>, List<ParseTree>> splitRepeatNodes(List<ParseTree> nodes, Class<?> targetClass) {
         List<ParseTree> children = new ArrayList<>();
+        List<ParseTree> left = new ArrayList<>();
 
-        for (int index = 0; index < nodes.length; index++) {
-            ParseTree node = nodes[index];
+        for (int index = 0; index < nodes.size(); index++) {
+            ParseTree node = nodes.get(index);
             if (!isSameClass(node, targetClass)) {
-                return new ParseTree[][] { children.toArray(new ParseTree[0]), getSubArray(nodes, index) };
+                left.addAll(nodes.subList(index, nodes.size()));
+                return new Pair<>(children, left);
             }
             children.add(node);
         }
-        return new ParseTree[][] { children.toArray(new ParseTree[0]), new ParseTree[0] };
+        return new Pair<>(children, left);
     }
 
     private static boolean isSameClass(ParseTree node, Class<?> targetClass) {
         return targetClass.isInstance(node);
-    }
-
-    private static ParseTree[] getSubArray(ParseTree[] nodes, int startIndex) {
-        ParseTree[] subArray = new ParseTree[nodes.length - startIndex];
-        System.arraycopy(nodes, startIndex, subArray, 0, nodes.length - startIndex);
-        return subArray;
     }
 
     // 遍历节点
@@ -318,14 +309,14 @@ public final class FormatterUtil {
         return new Pair<>(paddingMap, commentPadding);
     }
 
-    public static int[] calcFieldAlignByAssignPadding(List<ParseTree> fields) {
+    public static Pair<Integer, Integer> calcFieldAlignByAssignPadding(List<ParseTree> fields) {
         if (fields.isEmpty() || !isFieldOrEnumField(fields.get(0))) {
-            return new int[] { 0, 0 };
+            return new Pair<>(0, 0);
         }
 
-        int[] sizes = getSplitFieldsLeftRightSize(fields);
-        int leftMaxSize = sizes[0];
-        int rightMaxSize = sizes[1];
+        Pair<Integer, Integer> sizes = getSplitFieldsLeftRightSize(fields);
+        int leftMaxSize = sizes.a;
+        int rightMaxSize = sizes.b;
 
         // Add extra space "xxx = yyy" -> "xxx" + " " + "= yyy"
         int assignPadding = leftMaxSize + 1;
@@ -340,7 +331,7 @@ public final class FormatterUtil {
             commentPadding = commentPadding - 1;
         }
 
-        return new int[] { assignPadding, commentPadding };
+        return new Pair<>(assignPadding, commentPadding);
     }
 
     // Assume these methods are defined elsewhere

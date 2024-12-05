@@ -173,9 +173,9 @@ public class ThriftFormatter extends PureThriftFormatter {
             this.fieldAlignByFieldPaddingMap = paddingMap;
             this.fieldCommentPadding = this.calcAddIndentPadding(commentPadding);
         } else if (this.option.alignByAssign) {
-            int[] result = FormatterUtil.calcFieldAlignByAssignPadding(subblocks);
-            int alignPadding = result[0];
-            int commentPadding = result[1];
+            Pair<Integer, Integer> result = FormatterUtil.calcFieldAlignByAssignPadding(subblocks);
+            int alignPadding = result.a;
+            int commentPadding = result.b;
             this.fieldAlignByAssignPadding = this.calcAddIndentPadding(alignPadding);
             this.fieldCommentPadding = this.calcAddIndentPadding(commentPadding);
         }
