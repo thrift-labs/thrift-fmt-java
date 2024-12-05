@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -244,18 +245,11 @@ public class ThriftFormatter extends PureThriftFormatter {
 
         List<Token> tokens = this.data.tokens.getTokens();
         Token lastToken = tokens.get(this.lastTokenIndex);
-        List<Token> comments = new ArrayList<>();
-
-        for (int i = this.lastTokenIndex + 1; i < tokens.size(); i++) {
-            Token token = tokens.get(i);
-            if (token.getLine() != lastToken.getLine()) {
-                break;
-            }
-            if (token.getChannel() != Thrift.CommentChannel) {
-                continue;
-            }
-            comments.add(token);
-        }
+        List<Token> comments = tokens.stream()
+                .skip(this.lastTokenIndex + 1)
+                .takeWhile(token -> token.getLine() == lastToken.getLine())
+                .filter(token -> token.getChannel() == Thrift.CommentChannel)
+                .collect(Collectors.toList());
 
         if (!comments.isEmpty()) {
             Token comment = comments.get(0);
@@ -286,18 +280,12 @@ public class ThriftFormatter extends PureThriftFormatter {
         }
 
         int tokenIndex = node.getSymbol().getTokenIndex();
-        List<Token> comments = new ArrayList<>();
         List<Token> tokens = this.data.tokens.getTokens();
-
-        for (int i = this.lastTokenIndex + 1; i < tokens.size(); i++) {
-            Token token = tokens.get(i);
-            if (token.getChannel() != Thrift.CommentChannel) {
-                continue;
-            }
-            if (token.getTokenIndex() < tokenIndex) {
-                comments.add(token);
-            }
-        }
+        List<Token> comments = tokens.stream()
+                .skip(this.lastTokenIndex + 1)
+                .filter(token -> token.getChannel() == Thrift.CommentChannel)
+                .filter(token -> token.getTokenIndex() < tokenIndex)
+                .collect(Collectors.toList());
 
         for (Token token : comments) {
             if (token.getTokenIndex() > 0 && token.getType() == ThriftParser.ML_COMMENT) {
