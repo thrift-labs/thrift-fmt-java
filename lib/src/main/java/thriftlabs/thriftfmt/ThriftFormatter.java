@@ -72,11 +72,7 @@ public class ThriftFormatter extends PureThriftFormatter {
         }
 
         // 创建伪节点
-        CommonToken fakeToken = new CommonToken(ThriftParser.T__20, "required");
-        fakeToken.setLine(FormatterUtil.FAKE_NODE_LINE_NO);
-        fakeToken.setCharPositionInLine(FormatterUtil.FAKE_NODE_LINE_NO);
-        fakeToken.setTokenIndex(-1);
-        TerminalNode fakeNode = new TerminalNodeImpl(fakeToken);
+        TerminalNode fakeNode = FormatterUtil.createFakeNode(ThriftParser.T__20, "required");
         ThriftParser.Field_reqContext fakeReq = new ThriftParser.Field_reqContext(field, 0);
 
         fakeNode.setParent(fakeReq);
@@ -101,14 +97,9 @@ public class ThriftFormatter extends PureThriftFormatter {
             token.setText(",");
             return;
         }
-
-        CommonToken fakeToken = new CommonToken(ThriftParser.COMMA, ",");
-        fakeToken.setLine(FormatterUtil.FAKE_NODE_LINE_NO);
-        fakeToken.setCharPositionInLine(FormatterUtil.FAKE_NODE_LINE_NO);
-        fakeToken.setTokenIndex(-1);
-
-        TerminalNode fakeNode = new TerminalNodeImpl(fakeToken);
         ParserRuleContext currentNode = (ParserRuleContext) node;
+
+        TerminalNode fakeNode = FormatterUtil.createFakeNode(ThriftParser.COMMA, ",");
         ThriftParser.List_separatorContext fakeCtx = new ThriftParser.List_separatorContext(currentNode, 0);
 
         fakeNode.setParent(fakeCtx);

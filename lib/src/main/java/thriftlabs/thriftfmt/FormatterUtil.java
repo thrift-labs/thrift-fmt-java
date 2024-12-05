@@ -9,10 +9,12 @@ import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
+import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
 import thriftlabs.thriftparser.ThriftParser;
 
@@ -29,6 +31,14 @@ public final class FormatterUtil {
 
     public static boolean isFakeNode(TerminalNode node) {
         return node.getSymbol().getLine() == FAKE_NODE_LINE_NO;
+    }
+
+    public static TerminalNode createFakeNode(int type, String text) {
+        CommonToken fakeToken = new CommonToken(type, text);
+        fakeToken.setLine(FAKE_NODE_LINE_NO);
+        fakeToken.setCharPositionInLine(FAKE_NODE_LINE_NO);
+        fakeToken.setTokenIndex(-1);
+        return new TerminalNodeImpl(fakeToken);
     }
 
     public static boolean notSameClass(ParseTree a, ParseTree b) {
