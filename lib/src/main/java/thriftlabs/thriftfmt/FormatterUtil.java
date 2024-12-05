@@ -20,6 +20,7 @@ import thriftlabs.thriftparser.ThriftParser;
 
 public final class FormatterUtil {
     public static final int FAKE_NODE_LINE_NO = -1;
+    public static final int FAKE_TOKEN_INDEX = -1; // 用于 token
 
     public static boolean isToken(ParseTree node, String text) {
         return node instanceof TerminalNode && ((TerminalNode) node).getSymbol().getText().equals(text);
@@ -37,7 +38,7 @@ public final class FormatterUtil {
         CommonToken fakeToken = new CommonToken(type, text);
         fakeToken.setLine(FAKE_NODE_LINE_NO);
         fakeToken.setCharPositionInLine(FAKE_NODE_LINE_NO);
-        fakeToken.setTokenIndex(-1);
+        fakeToken.setTokenIndex(FAKE_TOKEN_INDEX);
         return new TerminalNodeImpl(fakeToken);
     }
 

@@ -228,11 +228,11 @@ public class ThriftFormatter extends PureThriftFormatter {
             return "";
         }
 
-        int lastNewLineIndex = this.out.lastIndexOf("\n");
-        if (lastNewLineIndex == -1) {
+        int index = this.out.lastIndexOf("\n");
+        if (index == -1) {
             return this.out;
         }
-        return this.out.substring(lastNewLineIndex + 1);
+        return this.out.substring(index + 1);
     }
 
     private void addTailComment() {
