@@ -10,36 +10,13 @@ import thriftlabs.thriftparser.ThriftParser;
 
 public class PureThriftFormatter {
 
-    protected static class Option {
-        int indent;
-        boolean patchRequired;
-        boolean patchSeparator;
-        boolean keepComment;
-        boolean alignByAssign;
-        boolean alignByField;
-
-        public Option(int indent, boolean patchRequired, boolean patchSeparator, boolean keepComment,
-                boolean alignByAssign, boolean alignByField) {
-            this.indent = indent;
-            this.patchRequired = patchRequired;
-            this.patchSeparator = patchSeparator;
-            this.keepComment = keepComment;
-            this.alignByAssign = alignByAssign;
-            this.alignByField = alignByField;
-        }
-    }
-
-    protected Option option = new Option(4, true, true, true, false, false);
+    protected Option option = new Option();
     protected String out;
     protected int newlineCounter;
     protected String currentIndent;
 
-    public void option(Option opt) {
+    public void setOption(Option opt) {
         this.option = opt;
-    }
-
-    public String getOut() {
-        return out;
     }
 
     public String formatNode(ParseTree node) {
@@ -115,7 +92,7 @@ public class PureThriftFormatter {
             }
             beforeBlockNode(node);
             if (index > 0 && lastNode != null) {
-                if (!lastNode.getClass().equals(node.getClass()) || FormatterUtil.isNeedNewLineNode(node)) {
+                if (!lastNode.getClass().equals(node.getClass()) || Util.isNeedNewLineNode(node)) {
                     newline(2);
                 } else {
                     newline();
@@ -140,11 +117,11 @@ public class PureThriftFormatter {
 
     protected void processNode(ParseTree node) {
         beforeProcessNode(node);
-        _processNode(node);
+        dispatchProcessNode(node);
         afterProcessNode(node);
     }
 
-    private void _processNode(ParseTree node) {
+    protected void dispatchProcessNode(ParseTree node) {
         if (node instanceof TerminalNode) {
             TerminalNode((TerminalNode) node);
         } else if (node instanceof ThriftParser.DocumentContext) {
@@ -228,7 +205,7 @@ public class PureThriftFormatter {
     }
 
     protected void TerminalNode(TerminalNode node) {
-        if (FormatterUtil.isEOF(node)) {
+        if (Util.isEOF(node)) {
             return;
         }
 
@@ -238,7 +215,7 @@ public class PureThriftFormatter {
     }
 
     protected void DocumentContext(ThriftParser.DocumentContext node) {
-        this.processBlockNodes(FormatterUtil.getNodeChildren(node), "");
+        this.processBlockNodes(Util.getNodeChildren(node), "");
     }
 
     protected void HeaderContext(ThriftParser.HeaderContext node) {
@@ -250,75 +227,75 @@ public class PureThriftFormatter {
     }
 
     private void Include_Context(ThriftParser.Include_Context node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Namespace_Context(ThriftParser.Namespace_Context node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Typedef_Context(ThriftParser.Typedef_Context node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Base_typeContext(ThriftParser.Base_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Real_base_typeContext(ThriftParser.Real_base_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Const_ruleContext(ThriftParser.Const_ruleContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Const_valueContext(ThriftParser.Const_valueContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void IntegerContext(ThriftParser.IntegerContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Container_typeContext(ThriftParser.Container_typeContext node) {
-        FormatterUtil.tightInline.process(this, node);
+        Util.tightInline.process(this, node);
     }
 
     protected void Set_typeContext(ThriftParser.Set_typeContext node) {
-        FormatterUtil.tightInline.process(this, node);
+        Util.tightInline.process(this, node);
     }
 
     protected void List_typeContext(ThriftParser.List_typeContext node) {
-        FormatterUtil.tightInline.process(this, node);
+        Util.tightInline.process(this, node);
     }
 
     protected void Cpp_typeContext(ThriftParser.Cpp_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Const_mapContext(ThriftParser.Const_mapContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Const_map_entryContext(ThriftParser.Const_map_entryContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void List_separatorContext(ThriftParser.List_separatorContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Field_idContext(ThriftParser.Field_idContext node) {
-        FormatterUtil.tightInline.process(this, node);
+        Util.tightInline.process(this, node);
     }
 
     protected void Field_reqContext(ThriftParser.Field_reqContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Field_typeContext(ThriftParser.Field_typeContext node) {
-        FormatterUtil.defaultInline.process(this, node);
+        Util.defaultInline.process(this, node);
     }
 
     protected void Map_typeContext(ThriftParser.Map_typeContext node) {
@@ -327,75 +304,75 @@ public class PureThriftFormatter {
             if (child.getParent() == null) {
                 return false;
             }
-            if (!FormatterUtil.isToken(child.getParent().getChild(index - 1), ",")) {
+            if (!Util.isToken(child.getParent().getChild(index - 1), ",")) {
                 return true;
             }
             return false;
         };
-        FormatterUtil.genInlineContext(" ", tightFn).process(this, node);
+        Util.genInlineContext(" ", tightFn).process(this, node);
     }
 
     protected void Const_listContext(ThriftParser.Const_listContext node) {
-        FormatterUtil.listSeparatorInline.process(this, node);
+        Util.listSeparatorInline.process(this, node);
     }
 
     protected void Enum_ruleContext(ThriftParser.Enum_ruleContext node) {
-        FormatterUtil.genSubblocksContext(3, ThriftParser.Enum_fieldContext.class).process(this, node);
+        Util.genSubblocksContext(3, ThriftParser.Enum_fieldContext.class).process(this, node);
     }
 
     protected void Struct_Context(ThriftParser.Struct_Context node) {
-        FormatterUtil.fieldSubblocks.process(this, node);
+        Util.fieldSubblocks.process(this, node);
     }
 
     protected void Union_Context(ThriftParser.Union_Context node) {
-        FormatterUtil.fieldSubblocks.process(this, node);
+        Util.fieldSubblocks.process(this, node);
     }
 
     protected void Exception_Context(ThriftParser.Exception_Context node) {
-        FormatterUtil.fieldSubblocks.process(this, node);
+        Util.fieldSubblocks.process(this, node);
     }
 
     protected void Enum_fieldContext(ThriftParser.Enum_fieldContext node) {
-        FormatterUtil.listSeparatorInline.process(this, node);
+        Util.listSeparatorInline.process(this, node);
     }
 
     protected void FieldContext(ThriftParser.FieldContext node) {
-        FormatterUtil.listSeparatorInline.process(this, node);
+        Util.listSeparatorInline.process(this, node);
     }
 
     protected void Function_Context(ThriftParser.Function_Context node) {
-        FormatterUtil.tupleTightInline.process(this, node);
+        Util.tupleTightInline.process(this, node);
     }
 
     protected void OnewayContext(ThriftParser.OnewayContext node) {
-        FormatterUtil.genInlineContext(" ", null).process(this, node);
+        Util.genInlineContext(" ", null).process(this, node);
     }
 
     protected void Function_typeContext(ThriftParser.Function_typeContext node) {
-        FormatterUtil.genInlineContext(" ", null).process(this, node);
+        Util.genInlineContext(" ", null).process(this, node);
     }
 
     protected void Throws_listContext(ThriftParser.Throws_listContext node) {
-        FormatterUtil.tupleTightInline.process(this, node);
+        Util.tupleTightInline.process(this, node);
     }
 
     protected void Type_annotationsContext(ThriftParser.Type_annotationsContext node) {
-        FormatterUtil.tupleTightInline.process(this, node);
+        Util.tupleTightInline.process(this, node);
     }
 
     protected void Type_annotationContext(ThriftParser.Type_annotationContext node) {
-        FormatterUtil.tupleTightInline.process(this, node);
+        Util.tupleTightInline.process(this, node);
     }
 
     protected void Annotation_valueContext(ThriftParser.Annotation_valueContext node) {
-        FormatterUtil.genInlineContext(" ", null).process(this, node);
+        Util.genInlineContext(" ", null).process(this, node);
     }
 
     protected void ServiceContext(ThriftParser.ServiceContext node) {
-        if (FormatterUtil.isToken(node.getChild(2), "extends")) {
-            FormatterUtil.genSubblocksContext(5, ThriftParser.Function_Context.class).process(this, node);
+        if (Util.isToken(node.getChild(2), "extends")) {
+            Util.genSubblocksContext(5, ThriftParser.Function_Context.class).process(this, node);
         } else {
-            FormatterUtil.genSubblocksContext(3, ThriftParser.Function_Context.class).process(this, node);
+            Util.genSubblocksContext(3, ThriftParser.Function_Context.class).process(this, node);
         }
     }
 

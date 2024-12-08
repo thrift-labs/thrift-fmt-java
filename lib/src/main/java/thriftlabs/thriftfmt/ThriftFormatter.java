@@ -33,18 +33,26 @@ public class ThriftFormatter extends PureThriftFormatter {
         this.fieldAlignByFieldPaddingMap = new HashMap<>();
     }
 
+    public ThriftFormatter(Thrift.ParserResult data, Option opt) {
+        this(data);
+        if (opt == null) {
+            throw new IllegalArgumentException("Option cannot be null.");
+        }
+        this.setOption(opt);
+    }
+
     public String format() {
         patch();
         return formatNode(document);
     }
 
     private void patch() {
-        if (this.option.patchRequired) {
-            FormatterUtil.walkNode(this.document, node -> this.patchFieldRequired(node));
+        if (this.option.isPatchRequired()) {
+            Util.walkNode(this.document, node -> this.patchFieldRequired(node));
         }
-        if (this.option.patchSeparator) {
-            FormatterUtil.walkNode(this.document, node -> this.patchFieldListSeparator(node));
-            FormatterUtil.walkNode(this.document, node -> this.patchRemoveLastListSeparator(node));
+        if (this.option.isPatchSeparator()) {
+            Util.walkNode(this.document, node -> this.patchFieldListSeparator(node));
+            Util.walkNode(this.document, node -> this.patchRemoveLastListSeparator(node));
         }
     }
 
@@ -56,7 +64,7 @@ public class ThriftFormatter extends PureThriftFormatter {
         ThriftParser.FieldContext field = (ThriftParser.FieldContext) node;
 
         // 检查父节点是否为 undefined 或者是 FunctionOrThrowsListNode 的实例
-        if (field.getParent() == null || FormatterUtil.isFunctionOrThrowsListNode(field.getParent())) {
+        if (field.getParent() == null || Util.isFunctionOrThrowsListNode(field.getParent())) {
             return;
         }
 
@@ -73,7 +81,7 @@ public class ThriftFormatter extends PureThriftFormatter {
         }
 
         // 创建伪节点
-        TerminalNode fakeNode = FormatterUtil.createFakeNode(ThriftParser.T__20, "required");
+        TerminalNode fakeNode = Util.createFakeNode(ThriftParser.T__20, "required");
         ThriftParser.Field_reqContext fakeReq = new ThriftParser.Field_reqContext(field, 0);
 
         fakeNode.setParent(fakeReq);
@@ -95,12 +103,12 @@ public class ThriftFormatter extends PureThriftFormatter {
         if (child instanceof ThriftParser.List_separatorContext) {
             TerminalNodeImpl comma = (TerminalNodeImpl) child.getChild(0);
             CommonToken token = (CommonToken) comma.getSymbol();
-            token.setText(",");
+            token.setText(Option.DEFAULT_SEPARATOR);
             return;
         }
-        ParserRuleContext currentNode = (ParserRuleContext) node;
 
-        TerminalNode fakeNode = FormatterUtil.createFakeNode(ThriftParser.COMMA, ",");
+        ParserRuleContext currentNode = (ParserRuleContext) node;
+        TerminalNode fakeNode = Util.createFakeNode(ThriftParser.COMMA, Option.DEFAULT_SEPARATOR);
         ThriftParser.List_separatorContext fakeCtx = new ThriftParser.List_separatorContext(currentNode, 0);
 
         fakeNode.setParent(fakeCtx);
@@ -113,7 +121,7 @@ public class ThriftFormatter extends PureThriftFormatter {
     private void patchRemoveLastListSeparator(ParseTree node) {
         boolean isInlineField = node instanceof ThriftParser.FieldContext &&
                 node.getParent() != null &&
-                FormatterUtil.isFunctionOrThrowsListNode(node.getParent());
+                Util.isFunctionOrThrowsListNode(node.getParent());
         boolean isInlineNode = node instanceof ThriftParser.Type_annotationContext;
         if (!(isInlineField || isInlineNode)) {
             return;
@@ -131,7 +139,7 @@ public class ThriftFormatter extends PureThriftFormatter {
 
         for (int i = 0; i < brotherCount; i++) {
             if (brothers.get(i) == node) {
-                if (i == brotherCount - 1 || !FormatterUtil.notSameClass(node, brothers.get(i + 1))) {
+                if (i == brotherCount - 1 || !Util.notSameClass(node, brothers.get(i + 1))) {
                     last = true;
                     break;
                 }
@@ -148,30 +156,30 @@ public class ThriftFormatter extends PureThriftFormatter {
 
     private int calcAddIndentPadding(int padding) {
         if (padding > 0) {
-            padding += this.option.indent;
+            padding += this.option.getIndent();
         }
         return padding;
     }
 
     protected void beforeSubblocks(List<ParseTree> subblocks) {
-        if (this.option.alignByField) {
-            Pair<Map<String, Integer>, Integer> result = FormatterUtil.calcFieldAlignByFieldPaddingMap(subblocks);
+        if (this.option.isAlignByField()) {
+            Pair<Map<String, Integer>, Integer> result = Util.calcFieldAlignByFieldPaddingMap(subblocks);
             Map<String, Integer> paddingMap = result.a;
             Integer commentPadding = result.b;
 
             paddingMap.forEach((key, value) -> paddingMap.put(key, this.calcAddIndentPadding(value)));
             this.fieldAlignByFieldPaddingMap = paddingMap;
             this.fieldCommentPadding = this.calcAddIndentPadding(commentPadding);
-        } else if (this.option.alignByAssign) {
-            Pair<Integer, Integer> result = FormatterUtil.calcFieldAlignByAssignPadding(subblocks);
+        } else if (this.option.isAlignByAssign()) {
+            Pair<Integer, Integer> result = Util.calcFieldAlignByAssignPadding(subblocks);
             int alignPadding = result.a;
             int commentPadding = result.b;
             this.fieldAlignByAssignPadding = this.calcAddIndentPadding(alignPadding);
             this.fieldCommentPadding = this.calcAddIndentPadding(commentPadding);
         }
 
-        if (this.option.keepComment && this.fieldCommentPadding == 0) {
-            int commentPadding = FormatterUtil.calcSubBlocksCommentPadding(subblocks);
+        if (this.option.isKeepComment() && this.fieldCommentPadding == 0) {
+            int commentPadding = Util.calcSubBlocksCommentPadding(subblocks);
             this.fieldCommentPadding = this.calcAddIndentPadding(commentPadding);
         }
     }
@@ -191,12 +199,12 @@ public class ThriftFormatter extends PureThriftFormatter {
     }
 
     private void addAlignPadding(ParseTree n) {
-        if (!FormatterUtil.isFieldOrEnumField(n.getParent())) {
+        if (!Util.isFieldOrEnumField(n.getParent())) {
             return;
         }
 
-        if (this.option.alignByField && !this.fieldAlignByFieldPaddingMap.isEmpty()) {
-            String name = FormatterUtil.getFieldChildName(n);
+        if (this.option.isAlignByField() && !this.fieldAlignByFieldPaddingMap.isEmpty()) {
+            String name = Util.getFieldChildName(n);
             Integer padding = this.fieldAlignByFieldPaddingMap.get(name);
             if (padding != null && padding > 0) {
                 this.padding(padding);
@@ -204,7 +212,7 @@ public class ThriftFormatter extends PureThriftFormatter {
             return;
         }
 
-        if (this.option.alignByAssign && FormatterUtil.isToken(n, "=")) {
+        if (this.option.isAlignByAssign() && Util.isToken(n, "=")) {
             this.padding(this.fieldAlignByAssignPadding);
             return;
         }
@@ -236,7 +244,7 @@ public class ThriftFormatter extends PureThriftFormatter {
     }
 
     private void addTailComment() {
-        if (!this.option.keepComment) {
+        if (!this.option.isKeepComment()) {
             return;
         }
         if (this.lastTokenIndex == -1) {
@@ -271,11 +279,11 @@ public class ThriftFormatter extends PureThriftFormatter {
     }
 
     private void addInlineComments(TerminalNode node) {
-        if (!this.option.keepComment) {
+        if (!this.option.isKeepComment()) {
             return;
         }
 
-        if (FormatterUtil.isFakeNode(node)) {
+        if (Util.isFakeNode(node)) {
             return;
         }
 
@@ -304,7 +312,7 @@ public class ThriftFormatter extends PureThriftFormatter {
             int lastLine = token.getLine() + text.split("\n").length - 1;
             int lineDiff = node.getSymbol().getLine() - lastLine;
             boolean isTight = token.getType() == ThriftParser.SL_COMMENT ||
-                    FormatterUtil.isEOF(node) ||
+                    Util.isEOF(node) ||
                     (0 < lineDiff && lineDiff <= 1);
 
             if (isTight) {

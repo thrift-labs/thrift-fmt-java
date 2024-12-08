@@ -19,11 +19,11 @@ dependencies {
     testImplementation libs.junit
 
     implementation 'org.antlr:antlr4-runtime:4.13.0'
-    implementation 'thriftlabs:thriftparser:0.0.3'
+    implementation 'thriftlabs:thriftparser:0.0.4'
 }
 
 group = 'thriftlabs'
-version = '0.0.1'
+version = '0.0.2'
 
 jar {
     archiveBaseName.set('thriftfmt')
@@ -33,9 +33,9 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            groupId = 'thriftlabs'
+            groupId = group
             artifactId = 'thriftfmt'
-            version = '0.0.1'
+            version = version
         }
     }
 

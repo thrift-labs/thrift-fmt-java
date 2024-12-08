@@ -18,7 +18,7 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
 import thriftlabs.thriftparser.ThriftParser;
 
-public final class FormatterUtil {
+class Util {
     public static final int FAKE_NODE_LINE_NO = -1;
     public static final int FAKE_TOKEN_INDEX = -1; // 用于 token
 
@@ -176,7 +176,7 @@ public final class FormatterUtil {
                 List<ParseTree> leftNodes = result.b; // 剩余的节点
 
                 formatter.beforeSubblocks(subblocks);
-                formatter.processBlockNodes(subblocks, " ".repeat(formatter.option.indent));
+                formatter.processBlockNodes(subblocks, " ".repeat(formatter.option.getIndent()));
                 formatter.afterSubblocks(subblocks);
 
                 formatter.newline();
