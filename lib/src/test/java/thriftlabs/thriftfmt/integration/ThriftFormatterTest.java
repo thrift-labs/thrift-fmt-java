@@ -91,4 +91,43 @@ public class ThriftFormatterTest {
         assertEquals(newContent, expect);
     }
 
+    @Test
+    public void testWithAlignThrift() {
+        String origin = "struct A {\n" +
+                "   1: i64 n,\n" +
+                "   2: string text = \"hello\"\n" +
+                "   3: boolean flag_value = true\n" +
+                "}";
+        var result = Thrift.parse(origin);
+        assertTrue(result.isSuccess());
+        var opt = new Option(4, true, true, true, true, false);
+        var formatter = new ThriftFormatter(result, opt);
+        var newContent = formatter.format();
+        var expect = "struct A {\n" +
+                "    1: required i64 n,\n" +
+                "    2: required string text        = \"hello\",\n" +
+                "    3: required boolean flag_value = true,\n" +
+                "}";
+        assertEquals(expect, newContent);
+    }
+
+    @Test
+    public void testWithAlignFieldThrift() {
+        String origin = "struct A {\n" +
+                "   1: i64 n,\n" +
+                "   2: string text = \"hello\"\n" +
+                "   3: boolean flag_value = true\n" +
+                "}";
+        var result = Thrift.parse(origin);
+        assertTrue(result.isSuccess());
+        var opt = new Option(4, true, true, true, false, true);
+        var formatter = new ThriftFormatter(result, opt);
+        var newContent = formatter.format();
+        var expect = "struct A {\n" +
+                "    1: required i64     n                   ,\n" +
+                "    2: required string  text       = \"hello\",\n" +
+                "    3: required boolean flag_value = true   ,\n" +
+                "}";
+        assertEquals(expect, newContent);
+    }
 }

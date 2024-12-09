@@ -80,10 +80,10 @@ class Util {
         }
 
         for (ParseTree child : splitChildren.a) {
-            left.addAnyChild(child); // 假设 addAnyChild 方法已定义
+            left.addAnyChild(child);
         }
         for (ParseTree child : splitChildren.b) {
-            right.addAnyChild(child); // 假设 addAnyChild 方法已定义
+            right.addAnyChild(child);
         }
         return new Pair<ParseTree, ParseTree>(left, right);
     }
@@ -347,10 +347,9 @@ class Util {
         return new Pair<>(assignPadding, commentPadding);
     }
 
-    // Assume these methods are defined elsewhere
     public static boolean isFieldOrEnumField(ParseTree field) {
-        // Implementation...
-        return false;
+        return field instanceof ThriftParser.FieldContext ||
+                field instanceof ThriftParser.Enum_fieldContext;
     }
 
     public static String getFieldChildName(ParseTree n) {
