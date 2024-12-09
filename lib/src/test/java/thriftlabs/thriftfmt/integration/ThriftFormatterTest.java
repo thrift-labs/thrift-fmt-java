@@ -2,6 +2,7 @@ package thriftlabs.thriftfmt.integration;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -69,4 +70,25 @@ public class ThriftFormatterTest {
         var formatter2 = new ThriftFormatter(result, option);
         formatter2.format();
     }
+
+    @Test
+    public void testWithComplexThrift() {
+        String origin = "struct A {\n" +
+                "   1: i64 n,\n" +
+                "   2: string text\n" +
+                "   3: boolean flag = true\n" +
+                "}";
+        var result = Thrift.parse(origin);
+        assertTrue(result.isSuccess());
+        var opt = new Option();
+        var formatter = new ThriftFormatter(result, opt);
+        var newContent = formatter.format();
+        var expect = "struct A {\n" +
+                "    1: required i64 n,\n" +
+                "    2: required string text,\n" +
+                "    3: required boolean flag = true,\n" +
+                "}";
+        assertEquals(newContent, expect);
+    }
+
 }

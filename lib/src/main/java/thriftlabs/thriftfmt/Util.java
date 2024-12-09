@@ -234,15 +234,16 @@ class Util {
         stack.add(root);
 
         while (!stack.isEmpty()) {
-            ParseTree node = stack.removeFirst(); // 移除并获取第一个元素
+            ParseTree node = stack.removeFirst();
             if (node == null) {
                 break;
             }
 
-            callback.accept(root); // 调用回调函数
-            List<ParseTree> children = getNodeChildren(node); // 获取子节点
+            callback.accept(node);
+
+            List<ParseTree> children = getNodeChildren(node);
             for (ParseTree child : children) {
-                stack.add(child); // 添加子节点到栈中
+                stack.add(child);
             }
         }
     }

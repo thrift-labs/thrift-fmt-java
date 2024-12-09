@@ -13,7 +13,7 @@ public class Option {
     private boolean alignByField;
 
     public Option() {
-        this(DEFAULT_INDENT, true, true, true, true, false);
+        this(DEFAULT_INDENT, true, true, true, false, false);
     }
 
     public Option(int indent, boolean patchRequired, boolean patchSeparator, boolean keepComment, boolean alignByAssign,
