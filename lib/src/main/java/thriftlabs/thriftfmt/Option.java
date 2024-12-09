@@ -28,8 +28,8 @@ public class Option {
         this.patchSeparator = patchSeparator;
         this.keepComment = keepComment;
 
-        this.alignByAssign = alignByAssign;
-        this.alignByField = !alignByAssign && alignByField;
+        this.alignByField = alignByField;
+        this.alignByAssign = !alignByField && alignByAssign;
     }
 
     public int getIndent() {
