@@ -105,7 +105,6 @@ class Util {
             }
         }
 
-        // 当前子节点属于左侧
         if (curLeft) {
             i++;
         }
@@ -115,13 +114,12 @@ class Util {
         return new Pair<List<ParseTree>, List<ParseTree>>(left, right);
     }
 
-    // 获取字段的左右分割大小
     public static Pair<Integer, Integer> getSplitFieldsLeftRightSize(List<ParseTree> fields) {
         int leftMaxSize = 0;
         int rightMaxSize = 0;
 
         for (ParseTree field : fields) {
-            Pair<ParseTree, ParseTree> split = splitFieldByAssign(field); // 需要实现 splitFieldByAssign 方法
+            Pair<ParseTree, ParseTree> split = splitFieldByAssign(field);
             if (split == null) {
                 break;
             }
@@ -134,7 +132,6 @@ class Util {
         return new Pair<>(leftMaxSize, rightMaxSize);
     }
 
-    // 获取节点的所有子节点
     public static List<ParseTree> getNodeChildren(ParseTree node) {
         int childCount = node.getChildCount();
         List<ParseTree> children = new ArrayList<>(childCount);
@@ -172,8 +169,8 @@ class Util {
 
                 List<ParseTree> leftChildren = children.subList(start, children.size());
                 Pair<List<ParseTree>, List<ParseTree>> result = splitRepeatNodes(leftChildren, kindClass);
-                List<ParseTree> subblocks = result.a; // 符合条件的子块
-                List<ParseTree> leftNodes = result.b; // 剩余的节点
+                List<ParseTree> subblocks = result.a;
+                List<ParseTree> leftNodes = result.b;
 
                 formatter.beforeSubblocks(subblocks);
                 formatter.processBlockNodes(subblocks, " ".repeat(formatter.option.getIndent()));
@@ -204,7 +201,6 @@ class Util {
                     (n.getParent() != null && isToken(n.getParent().getChild(i - 1), "(")) ||
                     n instanceof ThriftParser.List_separatorContext);
 
-    // 定义 NodeProcessFunc 接口
     public interface NodeProcessFunc {
         void process(PureThriftFormatter formatter, ParseTree node);
     }
@@ -228,7 +224,6 @@ class Util {
         return targetClass.isInstance(node);
     }
 
-    // 遍历节点
     public static void walkNode(ParseTree root, Consumer<ParseTree> callback) {
         LinkedList<ParseTree> stack = new LinkedList<>();
         stack.add(root);

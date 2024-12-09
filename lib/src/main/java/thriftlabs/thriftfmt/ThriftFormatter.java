@@ -57,30 +57,25 @@ public class ThriftFormatter extends PureThriftFormatter {
     }
 
     private void patchFieldRequired(ParseTree node) {
-        // 检查是否是 FieldContext 的实例
         if (!(node instanceof ThriftParser.FieldContext)) {
             return;
         }
         ThriftParser.FieldContext field = (ThriftParser.FieldContext) node;
-
-        // 检查父节点是否为 undefined 或者是 FunctionOrThrowsListNode 的实例
         if (field.getParent() == null || Util.isFunctionOrThrowsListNode(field.getParent())) {
             return;
         }
 
         int i;
-        // 遍历子节点
         for (i = 0; i < field.getChildCount(); i++) {
             ParseTree child = field.getChild(i);
             if (child instanceof ThriftParser.Field_reqContext) {
-                return; // 如果已经有 Field_reqContext，返回
+                return;
             }
             if (child instanceof ThriftParser.Field_typeContext) {
-                break; // 找到 Field_typeContext，停止循环
+                break;
             }
         }
 
-        // 创建伪节点
         TerminalNode fakeNode = Util.createFakeNode(ThriftParser.T__20, "required");
         ThriftParser.Field_reqContext fakeReq = new ThriftParser.Field_reqContext(field, 0);
 
@@ -88,7 +83,6 @@ public class ThriftFormatter extends PureThriftFormatter {
         fakeReq.addChild(fakeNode);
         fakeReq.setParent(field);
 
-        // 在子节点的指定位置插入 fakeReq
         field.children.add(i, fakeReq);
     }
 

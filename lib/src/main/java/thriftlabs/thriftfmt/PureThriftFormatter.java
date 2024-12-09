@@ -299,7 +299,6 @@ public class PureThriftFormatter {
     }
 
     protected void Map_typeContext(ThriftParser.Map_typeContext node) {
-        // (i, n) => !isToken(n.parent?.getChild(i - 1), ',')
         BiPredicate<Integer, ParseTree> tightFn = (index, child) -> {
             if (child.getParent() == null) {
                 return false;
