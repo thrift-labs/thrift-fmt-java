@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import thriftlabs.thriftparser.Thrift;
 import thriftlabs.thriftfmt.ThriftFormatter;
 import thriftlabs.thriftfmt.Option;
+import thriftlabs.thriftfmt.PureThriftFormatter;
 
 public class ThriftFormatterTest {
 
@@ -155,6 +156,23 @@ public class ThriftFormatterTest {
                 "    FIVE  = 5,\n" +
                 "    SIX      ,\n" +
                 "    EIGHT = 8,\n" +
+                "}";
+        assertEquals(expect, newContent);
+    }
+
+    @Test
+    public void TestConstList() {
+        var thrift = "struct OptionalSetDefaultTest {\n" + //
+                "    1: optional set<string> with_default = [ \"test\", \"hello\", ],\n" + //
+                "}";
+        Thrift.ParserResult result = Thrift.parse(thrift);
+        assertTrue(result.isSuccess());
+        var opt = new Option(4, true, true, true, false, true);
+        var formatter = new ThriftFormatter(result, opt);
+        var newContent = formatter.format();
+
+        var expect = "struct OptionalSetDefaultTest {\n" + //
+                "    1: optional set<string> with_default = [ \"test\", \"hello\" ],\n" + //
                 "}";
         assertEquals(expect, newContent);
     }
