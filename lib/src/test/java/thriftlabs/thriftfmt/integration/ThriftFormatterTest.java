@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import thriftlabs.thriftparser.Thrift;
 import thriftlabs.thriftfmt.ThriftFormatter;
 import thriftlabs.thriftfmt.Option;
-import thriftlabs.thriftfmt.PureThriftFormatter;
 
 public class ThriftFormatterTest {
 
