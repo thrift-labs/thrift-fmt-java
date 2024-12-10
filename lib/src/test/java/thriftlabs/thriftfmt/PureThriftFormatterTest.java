@@ -71,14 +71,14 @@ public class PureThriftFormatterTest {
 
     @Test
     public void TestConstList() {
-        var thrift = "struct OptionalSetDefaultTest {\n" + //
-                "    1: optional set<string> with_default = [ \"test\", \"hello\", ],\n" + //
+        var thrift = "struct OptionalSetDefaultTest {\n" +
+                "    1: optional set<string> with_default = [ \"test\", \"hello\", ],\n" +
                 "}";
         Thrift.ParserResult result = Thrift.parse(thrift);
         var formatter = new PureThriftFormatter();
         var content = formatter.formatNode(result.document);
-        var expect = "struct OptionalSetDefaultTest {\n" + //
-                "    1: optional set<string> with_default = [ \"test\", \"hello\", ],\n" + //
+        var expect = "struct OptionalSetDefaultTest {\n" +
+                "    1: optional set<string> with_default = [ \"test\", \"hello\", ],\n" +
                 "}";
         assertEquals(expect, content);
     }

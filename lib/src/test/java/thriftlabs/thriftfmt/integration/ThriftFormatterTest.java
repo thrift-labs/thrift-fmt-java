@@ -171,7 +171,7 @@ public class ThriftFormatterTest {
         var newContent = formatter.format();
 
         var expect = "struct OptionalSetDefaultTest {\n" + //
-                "    1: optional set<string> with_default = [ \"test\", \"hello\" ],\n" + //
+                "    1: optional set<string> with_default = [ \"test\", \"hello\", ],\n" + //
                 "}";
         assertEquals(expect, newContent);
     }
