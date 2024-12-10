@@ -130,4 +130,32 @@ public class ThriftFormatterTest {
                 "}";
         assertEquals(expect, newContent);
     }
+
+    @Test
+    public void testWithEnumThrift() {
+        String origin = "enum Numberz {\n" +
+                "ONE   = 1,\n" +
+                "TWO,\n" +
+                "THREE,\n" +
+                "FIVE  = 5,\n" +
+                "SIX,\n" +
+                "EIGHT = 8,\n" +
+                "}";
+
+        var result = Thrift.parse(origin);
+
+        assertTrue(result.isSuccess());
+        var opt = new Option(4, true, true, true, false, true);
+        var formatter = new ThriftFormatter(result, opt);
+        var newContent = formatter.format();
+        var expect = "enum Numberz {\n" +
+                "    ONE   = 1,\n" +
+                "    TWO      ,\n" +
+                "    THREE    ,\n" +
+                "    FIVE  = 5,\n" +
+                "    SIX      ,\n" +
+                "    EIGHT = 8,\n" +
+                "}";
+        assertEquals(expect, newContent);
+    }
 }

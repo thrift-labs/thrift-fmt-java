@@ -47,7 +47,7 @@ class Util {
     }
 
     public static boolean isNeedNewLineNode(ParseTree node) {
-        return node instanceof ThriftParser.Enum_fieldContext ||
+        return node instanceof ThriftParser.Enum_ruleContext ||
                 node instanceof ThriftParser.Struct_Context ||
                 node instanceof ThriftParser.Union_Context ||
                 node instanceof ThriftParser.Exception_Context ||
